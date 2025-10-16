@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>1on1爆上げAI｜Chat</title>
+  <title>1on1前壁打ちAI</title>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
     :root{
@@ -95,8 +95,8 @@
     <div class="brand">
       <img src="logomane.png" alt="logo" onerror="this.style.display='none'">
       <div>
-        <h1>1on1爆上げAI</h1>
-        <p class="lead">Difyアプリ用｜オリジナルChat UI</p>
+        <h1>1on1前壁打ちAI</h1>
+        <p class="lead">メンバー用</p>
       </div>
     </div>
     <div class="row">
@@ -126,9 +126,8 @@
      * ここに Dify の App Key を貼り付けて運用してください。
      * （Difyの「アプリ」画面で発行する **App Key**。API Keyではありません）
      */
-    const DIFY_APP_KEY = 'PASTE_YOUR_DIFY_APP_KEY_HERE'; // ←★ここにキーを貼る
-    const DIFY_ENDPOINT = 'https://api.dify.ai/v1/chat-messages'; // Chatアプリの場合
-    const DEFAULT_USER_PREFIX = 'web';
+    const DIFY_API_BASE = "https://api.dify.ai/v1";
+    const DIFY_API_KEY  = "app-g6U5vNb8MEw9RBuktS4wtpRo"; // ← あなたのDify App Key
 
     // ====== 要素・状態 ======
     const els = {
@@ -341,3 +340,4 @@
   </script>
 </body>
 </html>
+
