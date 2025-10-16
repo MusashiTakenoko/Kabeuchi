@@ -7,87 +7,40 @@
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
     :root{
-      /* ===== テーマ（黄緑） ===== */
-      --bg:#F7FFF7;
-      --card:#FFFFFF;
-      --line:#E6F7E6;
-      --text:#173B1A;
-      --muted:#6B8F6F;
-      --pri:#65D96E;       /* メイン（黄緑） */
-      --pri-600:#3FC755;   /* Hover濃色 */
-      --pill:#ECFFEE;
-      --shadow:0 8px 24px rgba(63,199,85,0.10);
-      --radius:16px;
+      --bg:#F7FFF7; --card:#FFFFFF; --line:#E6F7E6; --text:#173B1A; --muted:#6B8F6F;
+      --pri:#65D96E; --pri-600:#3FC755; --pill:#ECFFEE;
+      --shadow:0 8px 24px rgba(63,199,85,0.10); --radius:16px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{
-      margin:0; background:var(--bg); color:var(--text);
-      font-family:"M PLUS Rounded 1c", system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", sans-serif;
-      line-height:1.7;
-    }
-    header{
-      position:sticky; top:0; z-index:10;
-      background:#fff; border-bottom:1px solid var(--line);
-      padding:12px 18px; display:flex; align-items:center; gap:12px; justify-content:space-between;
-    }
+    body{ margin:0; background:var(--bg); color:var(--text);
+      font-family:"M PLUS Rounded 1c",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN","Yu Gothic UI","Noto Sans JP",sans-serif; line-height:1.7;}
+    header{ position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--line);
+      padding:12px 18px; display:flex; align-items:center; gap:12px; justify-content:space-between;}
     .brand{ display:flex; align-items:center; gap:12px; }
     header img{ width:40px; height:40px; border-radius:50%; }
     header h1{ margin:0; font-size:20px; font-weight:800; letter-spacing:.02em;}
     header .lead{ margin:0; color:var(--muted); font-size:13px; }
-
     .wrap{ max-width:1100px; margin:0 auto; padding:20px 14px 26px; }
-
-    .chat{
-      background:var(--card); border:1px solid var(--line);
-      border-radius:var(--radius); box-shadow:var(--shadow);
-      display:flex; flex-direction:column; min-height:70vh; max-height:80vh;
-    }
-    .messages{
-      padding:16px; overflow:auto; flex:1; display:flex; flex-direction:column; gap:14px;
-      scroll-behavior:smooth;
-    }
+    .chat{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+      display:flex; flex-direction:column; min-height:70vh; max-height:80vh; }
+    .messages{ padding:16px; overflow:auto; flex:1; display:flex; flex-direction:column; gap:14px; scroll-behavior:smooth;}
     .msg{ display:grid; grid-template-columns:42px 1fr; gap:10px; align-items:flex-start; }
-    .avatar{
-      width:42px; height:42px; border-radius:12px; display:grid; place-items:center;
-      background:var(--pill); border:1px solid var(--line); font-size:20px; user-select:none;
-    }
-    .bubble{
-      background:#FBFFFB; border:1px solid var(--line); padding:12px 14px; border-radius:14px;
-      white-space:pre-wrap; word-wrap:break-word;
-    }
+    .avatar{ width:42px; height:42px; border-radius:12px; display:grid; place-items:center; background:var(--pill); border:1px solid var(--line); font-size:20px; user-select:none;}
+    .bubble{ background:#FBFFFB; border:1px solid var(--line); padding:12px 14px; border-radius:14px; white-space:pre-wrap; word-wrap:break-word;}
     .msg.user .bubble{ background:#F4FFF5; border-color:#DCF6DE; }
     .msg.assistant .bubble{ background:#FFFFFF; }
-
-    .composer{
-      border-top:1px solid var(--line); padding:12px; display:flex; gap:10px; align-items:flex-end;
-    }
-    .composer textarea{
-      flex:1; min-height:52px; max-height:200px; resize:vertical;
-      width:100%; padding:12px 12px; border-radius:12px;
-      border:1px solid var(--line); background:#fff; color:var(--text);
-      outline:none;
-    }
-    .btn{
-      border:0; border-radius:12px; padding:12px 16px; font-weight:800; cursor:pointer;
-    }
-    .btn-primary{ background:var(--pri); color:#fff; }
-    .btn-primary:hover{ background:var(--pri-600); }
+    .composer{ border-top:1px solid var(--line); padding:12px; display:flex; gap:10px; align-items:flex-end; }
+    .composer textarea{ flex:1; min-height:52px; max-height:200px; resize:vertical; width:100%; padding:12px 12px; border-radius:12px;
+      border:1px solid var(--line); background:#fff; color:var(--text); outline:none; }
+    .btn{ border:0; border-radius:12px; padding:12px 16px; font-weight:800; cursor:pointer; }
+    .btn-primary{ background:var(--pri); color:#fff; } .btn-primary:hover{ background:var(--pri-600); }
     .btn-ghost{ background:#F1FFF3; color:var(--pri-600); }
-    .btn-danger{ background:#FFEBEB; color:#B23A3A; }
-
     .row{ display:flex; gap:8px; align-items:center; }
     .note{ font-size:12px; color:var(--muted); }
-    .status.success{ color:#128A3F; }
-    .status.error{ color:#B23A3A; }
-
-    /* トースト */
-    .toast{
-      position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
-      background:#ffffff; border:1px solid var(--line); border-radius:999px;
-      padding:8px 14px; font-size:12px; color:var(--muted); box-shadow:var(--shadow);
-      display:none;
-    }
+    .status.success{ color:#128A3F; } .status.error{ color:#B23A3A; }
+    .toast{ position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:#ffffff; border:1px solid var(--line);
+      border-radius:999px; padding:8px 14px; font-size:12px; color:var(--muted); box-shadow:var(--shadow); display:none;}
   </style>
 </head>
 <body>
@@ -121,13 +74,11 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    /**
-     * ========= 設定 =========
-     * ここに Dify の App Key を貼り付けて運用してください。
-     * （Difyの「アプリ」画面で発行する **App Key**。API Keyではありません）
-     */
-    const DIFY_API_BASE = "https://api.dify.ai/v1";
-    const DIFY_API_KEY  = "app-g6U5vNb8MEw9RBuktS4wtpRo"; // ← あなたのDify App Key
+    /** ========= 設定（名称を統一） ========= */
+    const DEFAULT_USER_PREFIX = 'web';
+    const DIFY_API_BASE = "https://api.dify.ai/v1";                         // ← 基本URL
+    const DIFY_APP_KEY  = "app-g6U5vNb8MEw9RBuktS4wtpRo";                   // ← あなたのApp Key
+    const DIFY_ENDPOINT = DIFY_API_BASE + "/chat-messages";                 // ← ここを使う
 
     // ====== 要素・状態 ======
     const els = {
@@ -152,15 +103,11 @@
     // 初期メッセージ
     (function init(){
       renderMsg('assistant', '👋 はじめましょう。メッセージを入力して送信してください。');
-      // Enter送信（Shift+Enterで改行）
       els.input.addEventListener('keydown', (e)=>{
         if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); safeSend(); }
       });
-      // クリック送信
       els.send.addEventListener('click', safeSend);
-      // 停止
       els.stop.addEventListener('click', stopStreaming);
-      // 新規会話
       els.newChat.addEventListener('click', () => {
         localStorage.removeItem(LS.convId);
         renderMsg('assistant', '🆕 新しい会話を開始しました。');
@@ -168,7 +115,7 @@
       });
     })();
 
-    // ====== メッセージ描画 ======
+    // ====== UI描画 ======
     function renderMsg(role, text){
       const div = document.createElement('div');
       div.className = `msg ${role}`;
@@ -186,8 +133,6 @@
       bubble.textContent += chunk;
       els.messages.scrollTop = els.messages.scrollHeight;
     }
-
-    // ====== トースト ======
     function showToast(text, ms=2200){
       els.toast.textContent = text;
       els.toast.style.display = 'block';
@@ -195,16 +140,16 @@
     }
 
     // ====== 送信制御 ======
-    let aborter = null;     // Streaming中断用
-    let sending = false;    // 二重送信ガード
+    let aborter = null;
+    let sending = false;
 
     async function safeSend(){
-      if(sending) return;   // 二重送信防止
+      if(sending) return;
       const query = els.input.value.trim();
       if(!query) return;
 
-      if(!DIFY_APP_KEY || DIFY_APP_KEY.includes('PASTE_YOUR_DIFY_APP_KEY_HERE')){
-        renderMsg('assistant','⚠️ Dify App Key が未設定です。index.html 内の DIFY_APP_KEY を設定してください。');
+      if(!DIFY_APP_KEY || !DIFY_APP_KEY.startsWith('app-')){
+        renderMsg('assistant','⚠️ Dify App Key が未設定または不正です。index.html 内の DIFY_APP_KEY を設定してください。');
         return;
       }
 
@@ -212,17 +157,13 @@
       els.send.disabled = true; els.stop.disabled = false;
       els.status.textContent = '送信中…';
 
-      // UI反映（ユーザー発言）
       renderMsg('user', query);
       els.input.value = '';
 
       const user = defaultUserId();
       const conversation_id = getConvId() || undefined;
-
-      // 受け取りバブル
       const bubble = renderMsg('assistant','');
 
-      // まずは Streaming を試す → ダメなら blocking にフォールバック
       try{
         await callDifyStreaming({query, user, conversation_id, bubble});
         els.status.innerHTML = '<span class="status success">完了</span>';
@@ -261,11 +202,7 @@
           'Accept': 'text/event-stream'
         },
         body: JSON.stringify({
-          inputs: {},              // App入力があればここに { key:value }
-          query,
-          response_mode: 'streaming',
-          user,
-          conversation_id
+          inputs: {}, query, response_mode: 'streaming', user, conversation_id
         }),
         signal: aborter.signal
       });
@@ -297,13 +234,9 @@
                 break;
               case 'error':
                 throw new Error(evt?.message || 'unknown');
-              default:
-                // ping / tool_call などは今回は無視
-                break;
+              default: break; // ping 等は無視
             }
-          }catch(e){
-            // keep-alive等は無視
-          }
+          }catch(e){ /* keepalive等は無視 */ }
         }
       }
     }
@@ -320,24 +253,13 @@
           'Accept': 'application/json'
         },
         body: JSON.stringify({
-          inputs: {},
-          query,
-          response_mode: 'blocking',
-          user,
-          conversation_id
+          inputs: {}, query, response_mode: 'blocking', user, conversation_id
         })
       });
       const text = await res.text();
-      if(!res.ok){
-        throw new Error(`HTTP ${res.status} - ${text}`);
-      }
-      try{
-        return JSON.parse(text);
-      }catch{
-        return { answer: text };
-      }
+      if(!res.ok){ throw new Error(`HTTP ${res.status} - ${text}`); }
+      try{ return JSON.parse(text); }catch{ return { answer: text }; }
     }
   </script>
 </body>
 </html>
-
