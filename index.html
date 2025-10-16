@@ -81,7 +81,7 @@
     .status.success{ color:#128A3F; }
     .status.error{ color:#B23A3A; }
 
-    /* 小さめのヘルプトースト */
+    /* トースト */
     .toast{
       position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
       background:#ffffff; border:1px solid var(--line); border-radius:999px;
@@ -95,8 +95,8 @@
     <div class="brand">
       <img src="logomane.png" alt="logo" onerror="this.style.display='none'">
       <div>
-        <h1>1on1前壁打ちAI</h1>
-        <p class="lead">メンバー用</p>
+        <h1>1on1爆上げAI</h1>
+        <p class="lead">Difyアプリ用｜オリジナルChat UI</p>
       </div>
     </div>
     <div class="row">
@@ -123,15 +123,14 @@
   <script>
     /**
      * ========= 設定 =========
-     * 社内用：ここに Dify の App Key を貼り付けて運用してください。
-     * 例: const DIFY_APP_KEY = 'app-xxxxxxxxxxxxxxxxxxxxxxxx';
+     * ここに Dify の App Key を貼り付けて運用してください。
+     * （Difyの「アプリ」画面で発行する **App Key**。API Keyではありません）
      */
-    const DIFY_API_BASE = "https://api.dify.ai/v1";
-    const DIFY_API_KEY  = "app-g6U5vNb8MEw9RBuktS4wtpRo"; // ← あなたのDify App Key
+    const DIFY_APP_KEY = 'PASTE_YOUR_DIFY_APP_KEY_HERE'; // ←★ここにキーを貼る
+    const DIFY_ENDPOINT = 'https://api.dify.ai/v1/chat-messages'; // Chatアプリの場合
+    const DEFAULT_USER_PREFIX = 'web';
 
-    /**
-     * ====== 状態・要素 ======
-     */
+    // ====== 要素・状態 ======
     const els = {
       messages: document.getElementById('messages'),
       input: document.getElementById('input'),
@@ -142,34 +141,33 @@
       toast: document.getElementById('toast'),
     };
 
-    const LS = {
-      convId: 'dify_conv_id',
-      anon: 'anon_uid_v1',
-    };
-
+    const LS = { convId: 'dify_conv_id', anon: 'anon_uid_v1' };
     function defaultUserId(){
       let v = localStorage.getItem(LS.anon);
       if(!v){ v = `${DEFAULT_USER_PREFIX}-` + Math.random().toString(36).slice(2,10); localStorage.setItem(LS.anon, v); }
       return v;
     }
-
     function getConvId(){ return localStorage.getItem(LS.convId) || ''; }
     function setConvId(id){ if(id){ localStorage.setItem(LS.convId, id); } }
 
     // 初期メッセージ
     (function init(){
       renderMsg('assistant', '👋 はじめましょう。メッセージを入力して送信してください。');
+      // Enter送信（Shift+Enterで改行）
       els.input.addEventListener('keydown', (e)=>{
-        if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
+        if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); safeSend(); }
+      });
+      // クリック送信
+      els.send.addEventListener('click', safeSend);
+      // 停止
+      els.stop.addEventListener('click', stopStreaming);
+      // 新規会話
+      els.newChat.addEventListener('click', () => {
+        localStorage.removeItem(LS.convId);
+        renderMsg('assistant', '🆕 新しい会話を開始しました。');
+        showToast('新しい会話を開始しました');
       });
     })();
-
-    // 新規会話
-    els.newChat.addEventListener('click', () => {
-      localStorage.removeItem(LS.convId);
-      renderMsg('assistant', '🆕 新しい会話を開始しました。');
-      showToast('新しい会話を開始しました');
-    });
 
     // ====== メッセージ描画 ======
     function renderMsg(role, text){
@@ -185,114 +183,161 @@
       els.messages.scrollTop = els.messages.scrollHeight;
       return bubble;
     }
-
     function appendChunk(bubble, chunk){
       bubble.textContent += chunk;
       els.messages.scrollTop = els.messages.scrollHeight;
     }
 
     // ====== トースト ======
-    function showToast(text, ms=1800){
+    function showToast(text, ms=2200){
       els.toast.textContent = text;
       els.toast.style.display = 'block';
       setTimeout(()=> els.toast.style.display = 'none', ms);
     }
 
-    // ====== APIコール（Dify Streaming） ======
-    let aborter = null;
+    // ====== 送信制御 ======
+    let aborter = null;     // Streaming中断用
+    let sending = false;    // 二重送信ガード
 
-    async function sendMessage(){
+    async function safeSend(){
+      if(sending) return;   // 二重送信防止
       const query = els.input.value.trim();
-      if(!query){ return; }
+      if(!query) return;
+
       if(!DIFY_APP_KEY || DIFY_APP_KEY.includes('PASTE_YOUR_DIFY_APP_KEY_HERE')){
-        alert('Dify App Key が未設定です。index.html 内の DIFY_APP_KEY を設定してください。');
+        renderMsg('assistant','⚠️ Dify App Key が未設定です。index.html 内の DIFY_APP_KEY を設定してください。');
         return;
       }
 
-      // UI 反映
+      sending = true;
+      els.send.disabled = true; els.stop.disabled = false;
+      els.status.textContent = '送信中…';
+
+      // UI反映（ユーザー発言）
       renderMsg('user', query);
       els.input.value = '';
-      els.status.textContent = '送信中…';
-      els.send.disabled = true; els.stop.disabled = false;
 
       const user = defaultUserId();
       const conversation_id = getConvId() || undefined;
+
+      // 受け取りバブル
       const bubble = renderMsg('assistant','');
 
-      aborter = new AbortController();
+      // まずは Streaming を試す → ダメなら blocking にフォールバック
       try{
-        const res = await fetch(DIFY_ENDPOINT, {
-          method: 'POST',
-          headers: {
-            'Authorization': 'Bearer ' + DIFY_APP_KEY,
-            'Content-Type': 'application/json',
-            'Accept': 'text/event-stream'
-          },
-          body: JSON.stringify({
-            inputs: {},              // Dify 側の App 入力変数を使う場合に渡す
-            query,
-            response_mode: 'streaming',
-            user,
-            conversation_id
-          }),
-          signal: aborter.signal
-        });
-
-        if(!res.ok || !res.body){
-          const txt = await res.text().catch(()=> '');
-          throw new Error('HTTP ' + res.status + (txt ? (' - ' + txt) : ''));
-        }
-
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder('utf-8');
-        let done = false;
-
-        while(!done){
-          const {value, done: streamDone} = await reader.read();
-          done = streamDone;
-          if(value){
-            const chunk = decoder.decode(value, {stream:true});
-            for(const line of chunk.split(/\r?\n/)){
-              if(!line.startsWith('data:')) continue;
-              const data = line.slice(5).trim();
-              if(!data || data === '[DONE]') continue;
-              try{
-                const evt = JSON.parse(data);
-                switch(evt.event){
-                  case 'message':
-                    if(evt.answer){ appendChunk(bubble, evt.answer); }
-                    break;
-                  case 'message_end':
-                    if(evt.conversation_id){ setConvId(evt.conversation_id); }
-                    break;
-                  case 'error':
-                    appendChunk(bubble, '\n\n⚠️ エラー: ' + (evt?.message || 'unknown'));
-                    break;
-                  default:
-                    // ping など無視
-                    break;
-                }
-              }catch(e){
-                // keepalive 等は無視
-              }
-            }
-          }
-        }
-
+        await callDifyStreaming({query, user, conversation_id, bubble});
         els.status.innerHTML = '<span class="status success">完了</span>';
-      }catch(err){
-        appendChunk(bubble, '\n\n⚠️ 通信に失敗しました: ' + err.message);
-        els.status.innerHTML = '<span class="status error">エラー</span>';
+      }catch(streamErr){
+        appendChunk(bubble, `\n\n⚠️ Streamingに失敗しました。blockingモードに切り替えます。\n詳細: ${streamErr.message || streamErr}`);
+        try{
+          const answer = await callDifyBlocking({query, user, conversation_id});
+          if(answer?.answer){ appendChunk(bubble, `\n\n${answer.answer}`); }
+          if(answer?.conversation_id){ setConvId(answer.conversation_id); }
+          els.status.innerHTML = '<span class="status success">完了（blocking）</span>';
+        }catch(blockErr){
+          appendChunk(bubble, `\n\n❌ 送信に失敗しました: ${blockErr.message || blockErr}`);
+          els.status.innerHTML = '<span class="status error">エラー</span>';
+        }
       }finally{
+        sending = false;
         els.send.disabled = false; els.stop.disabled = true;
         aborter = null;
       }
     }
 
-    els.send.addEventListener('click', sendMessage);
-    els.stop.addEventListener('click', ()=>{
+    function stopStreaming(){
       if(aborter){ aborter.abort(); els.stop.disabled = true; els.status.textContent = '停止しました'; }
-    });
+    }
+
+    // ====== Dify呼び出し（Streaming） ======
+    async function callDifyStreaming({query, user, conversation_id, bubble}){
+      aborter = new AbortController();
+      const res = await fetch(DIFY_ENDPOINT, {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'omit',
+        headers: {
+          'Authorization': 'Bearer ' + DIFY_APP_KEY,
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream'
+        },
+        body: JSON.stringify({
+          inputs: {},              // App入力があればここに { key:value }
+          query,
+          response_mode: 'streaming',
+          user,
+          conversation_id
+        }),
+        signal: aborter.signal
+      });
+
+      if(!res.ok || !res.body){
+        const text = await res.text().catch(()=> '');
+        throw new Error(`HTTP ${res.status}${text ? ' - ' + text : ''}`);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+
+      while(true){
+        const {value, done} = await reader.read();
+        if(done) break;
+        const chunk = decoder.decode(value, {stream:true});
+        for(const line of chunk.split(/\r?\n/)){
+          if(!line.startsWith('data:')) continue;
+          const data = line.slice(5).trim();
+          if(!data || data === '[DONE]') continue;
+          try{
+            const evt = JSON.parse(data);
+            switch(evt.event){
+              case 'message':
+                if(evt.answer){ appendChunk(bubble, evt.answer); }
+                break;
+              case 'message_end':
+                if(evt.conversation_id){ setConvId(evt.conversation_id); }
+                break;
+              case 'error':
+                throw new Error(evt?.message || 'unknown');
+              default:
+                // ping / tool_call などは今回は無視
+                break;
+            }
+          }catch(e){
+            // keep-alive等は無視
+          }
+        }
+      }
+    }
+
+    // ====== Dify呼び出し（blocking フォールバック） ======
+    async function callDifyBlocking({query, user, conversation_id}){
+      const res = await fetch(DIFY_ENDPOINT, {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'omit',
+        headers: {
+          'Authorization': 'Bearer ' + DIFY_APP_KEY,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          inputs: {},
+          query,
+          response_mode: 'blocking',
+          user,
+          conversation_id
+        })
+      });
+      const text = await res.text();
+      if(!res.ok){
+        throw new Error(`HTTP ${res.status} - ${text}`);
+      }
+      try{
+        return JSON.parse(text);
+      }catch{
+        return { answer: text };
+      }
+    }
   </script>
 </body>
 </html>
